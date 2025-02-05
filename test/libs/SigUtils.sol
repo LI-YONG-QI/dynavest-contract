@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity ^0.8.12;
 
-import {IStrategyManager} from "../Executor.t.sol";
+import {IStrategyManager} from "../helpers/IStrategyManager.sol";
 import {IERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol";
 import {Vm} from "forge-std/Vm.sol";
 
@@ -51,12 +51,12 @@ library SigUtils {
         return digestHash;
     }
 
-    function sign(uint256 pk, bytes32 digest) internal view returns (uint8, bytes32, bytes32) {
+    function sign(uint256 pk, bytes32 digest) internal pure returns (uint8, bytes32, bytes32) {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(pk, digest);
         return (v, r, s);
     }
 
-    function signAggregate(uint256 pk, bytes32 digest) internal view returns (bytes memory) {
+    function signAggregate(uint256 pk, bytes32 digest) internal pure returns (bytes memory) {
         (uint8 v, bytes32 r, bytes32 s) = sign(pk, digest);
         return abi.encodePacked(r, s, v);
     }
