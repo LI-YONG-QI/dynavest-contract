@@ -3,41 +3,48 @@ pragma solidity ^0.8.0;
 
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {Test} from "forge-std/Test.sol";
-
+import {Test, console} from "forge-std/Test.sol";
+import {stdJson} from "forge-std/StdJson.sol";
+import {Strings} from "../libs/Strings.sol";
 import {Executor} from "../../src/Executor.sol";
 import {Vault} from "../../src/Vault.sol";
 
 abstract contract TestBase is Test {
+    using stdJson for *;
+    using Strings for *;
+
     Executor executor;
     Vault vault;
-
-    IERC20 constant USDC = IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
-    IERC20 constant cbETH = IERC20(0xBe9895146f7AF43049ca1c1AE358B0541Ea49704);
-    IERC20 constant DAI = IERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F);
 
     uint256 constant userPrivateKey = 123;
     address immutable user = vm.addr(userPrivateKey);
 
-    function _approveTokens(IERC20 token, address from, address spender, uint256 amount) internal {
+    function _approveTokens(IERC20 _token, address from, address spender, uint256 amount) internal {
         vm.startBroadcast(from);
 
-        IERC20(token).approve(spender, amount);
+        IERC20(_token).approve(spender, amount);
 
         vm.stopBroadcast();
     }
 
+    function _buildConfigPath(uint256 chainId) private pure returns (string memory) {
+        return string.concat("configs/", chainId.toString(), ".json");
+    }
+
     function _deployContracts() internal {
-        vault = new Vault(address(USDC));
+        vault = new Vault(0x8720095Fa5739Ab051799211B146a2EEE4Dd8B37);
         executor = new Executor(address(vault));
 
         _label();
+
+        // string memory configJson = vm.readFile(_buildConfigPath(block.chainid));
+        // bytes memory json = vm.parseJson(configJson);
+        // token = abi.decode(json, (Token));
     }
 
-    function _fund(address to, uint256 amount) internal {
-        deal(address(USDC), to, amount);
-        deal(address(cbETH), to, amount);
-        deal(address(DAI), to, amount);
+    function _getConfig() internal view returns (bytes memory) {
+        string memory configJson = vm.readFile(_buildConfigPath(block.chainid));
+        return vm.parseJson(configJson);
     }
 
     function _label() private {

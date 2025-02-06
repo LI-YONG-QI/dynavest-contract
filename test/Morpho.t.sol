@@ -11,20 +11,33 @@ import {SigUtils} from "./libs/SigUtils.sol";
 import {MorphoLib} from "./libs/MorphoLib.sol";
 import {TestBase} from "./helpers/TestBase.sol";
 
+struct MorphoConfig {
+    IERC20 USDC;
+    IERC20 WETH;
+    address morphoBlue;
+}
+
 contract MorphoTest is TestBase {
     address morphoBlue = MorphoLib.MORPHO_BLUE;
+    uint256 constant INIT_SUPPLY = 1e27;
+
+    MorphoConfig config;
 
     function setUp() public {
         _deployContracts();
-        _fund(user, 1000e6);
+
+        bytes memory _config = _getConfig();
+        config = abi.decode(_config, (MorphoConfig));
+
+        deal(address(config.USDC), user, INIT_SUPPLY);
+        deal(address(config.WETH), user, INIT_SUPPLY);
     }
 
     //* Supply directly USDC to cbETH/USDC market
     function testMorphoCall() public {
-        // _beforeExecute();
-        _approveTokens(USDC, user, address(executor), 5e6);
         uint256 amount = 5e6;
-        bytes32 marketId = 0x64d65c9a2d91c36d56fbc42d69e979335320169b3df63bf92789e2c8883fcc64; // cbETH/USDC market
+        _approveTokens(config.USDC, user, address(executor), amount);
+        bytes32 marketId = 0xe36464b73c0c39836918f7b2b9a6f1a8b70d7bb9901b38f29544d9b96119862e; // WETH/USDC market
 
         MarketParams memory params = MorphoLib.getMarketParams(marketId);
 
@@ -32,14 +45,15 @@ contract MorphoTest is TestBase {
         uint256 expiry = block.timestamp + 1000;
         SigUtils.Permit memory permit =
             SigUtils.Permit({owner: user, spender: address(executor), value: amount, nonce: 0, deadline: expiry});
-        (uint8 v, bytes32 r, bytes32 s) = SigUtils.sign(userPrivateKey, SigUtils.getPermitDigest(permit, address(USDC)));
+        (uint8 v, bytes32 r, bytes32 s) =
+            SigUtils.sign(userPrivateKey, SigUtils.getPermitDigest(permit, address(config.USDC)));
 
         //* Multicall
         Multicall3.Call[] memory calls = new Multicall3.Call[](4);
 
         // TODO: Use `MorphoCallback` to eliminate this pre-transfer step
         calls[0] = Multicall3.Call({
-            target: address(USDC),
+            target: address(config.USDC),
             callData: abi.encodeWithSignature(
                 "permit(address,address,uint256,uint256,uint8,bytes32,bytes32)",
                 permit.owner,
@@ -53,17 +67,17 @@ contract MorphoTest is TestBase {
         });
 
         calls[1] = Multicall3.Call({
-            target: address(USDC),
+            target: address(config.USDC),
             callData: abi.encodeWithSignature("transferFrom(address,address,uint256)", user, executor, amount)
         });
 
         calls[2] = Multicall3.Call({
-            target: address(USDC),
-            callData: abi.encodeWithSignature("approve(address,uint256)", morphoBlue, amount)
+            target: address(config.USDC),
+            callData: abi.encodeWithSignature("approve(address,uint256)", config.morphoBlue, amount)
         });
 
         calls[3] = Multicall3.Call({
-            target: morphoBlue,
+            target: config.morphoBlue,
             callData: abi.encodeWithSignature(
                 "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
                 params,
@@ -76,7 +90,7 @@ contract MorphoTest is TestBase {
         executor.execute(calls, user);
 
         (uint256 supplyShares, uint128 borrowShares, uint128 collateral) =
-            IMorphoStaticTyping(morphoBlue).position(Id.wrap(marketId), user);
+            IMorphoStaticTyping(config.morphoBlue).position(Id.wrap(marketId), user);
         console.log("Supply Shares: %d", supplyShares);
         console.log("Borrow Shares: %d", borrowShares);
         console.log("Collateral: %d", collateral);
