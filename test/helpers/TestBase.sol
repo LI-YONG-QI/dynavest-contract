@@ -24,8 +24,9 @@ abstract contract TestBase is Test {
 
     //! For caching fork data, the block number is required
     string API_KEY = vm.envString("INFURA_KEY_API");
-    uint256 mainnetFork = vm.createFork(string.concat("https://mainnet.infura.io/v3/", API_KEY), 21786590);
-    uint256 baseSepoliaFork = vm.createFork(string.concat("https://base-sepolia.infura.io/v3/", API_KEY), 21533254);
+    uint256 immutable mainnetFork = vm.createFork(string.concat("https://mainnet.infura.io/v3/", API_KEY), 21786590);
+    uint256 immutable baseSepoliaFork =
+        vm.createFork(string.concat("https://base-sepolia.infura.io/v3/", API_KEY), 21533254);
 
     function _approveTokens(IERC20 _token, address from, address spender, uint256 amount) internal {
         vm.startBroadcast(from);

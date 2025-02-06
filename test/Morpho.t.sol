@@ -18,7 +18,6 @@ struct MorphoConfig {
 }
 
 contract MorphoTest is TestBase {
-    address morphoBlue = MorphoLib.MORPHO_BLUE;
     uint256 constant INIT_SUPPLY = 1e27;
 
     MorphoConfig config;
@@ -41,7 +40,7 @@ contract MorphoTest is TestBase {
         _approveTokens(config.USDC, user, address(executor), amount);
         bytes32 marketId = 0xe36464b73c0c39836918f7b2b9a6f1a8b70d7bb9901b38f29544d9b96119862e; // WETH/USDC market
 
-        MarketParams memory params = MorphoLib.getMarketParams(marketId);
+        MarketParams memory params = MorphoLib.getMarketParams(marketId, config.morphoBlue);
 
         //* Introduce permit signature
         uint256 expiry = block.timestamp + 1000;
