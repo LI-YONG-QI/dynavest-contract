@@ -20,7 +20,7 @@ contract EigenTest is TestBase {
     EigenConfig config;
 
     function setUp() public {
-        vm.selectFork(mainnetFork);
+        vm.selectFork(holeskyFork);
         _deployContracts();
 
         bytes memory _config = _getConfig("eigen");
