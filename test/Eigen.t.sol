@@ -19,8 +19,10 @@ struct EigenConfig {
 contract EigenTest is TestBase {
     EigenConfig config;
 
-    function setUp() public {
+    function setUp() public override {
         vm.selectFork(holeskyFork);
+
+        super.setUp();
         _deployContracts();
 
         bytes memory _config = _getConfig("eigen");
@@ -30,6 +32,8 @@ contract EigenTest is TestBase {
     }
 
     function testEigenCall() public {
+        _depositToVault(user, 4e6);
+
         //* Introduce signature
         uint256 expiry = block.timestamp + 1000;
         SigUtils.Deposit memory cbETHDeposit = SigUtils.Deposit({

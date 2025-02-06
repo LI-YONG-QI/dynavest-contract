@@ -20,9 +20,10 @@ contract UniswapTest is TestBase {
     LiquidityExamples liquidity;
     UniswapConfig config;
 
-    function setUp() public {
+    function setUp() public override {
         vm.selectFork(mainnetFork);
 
+        super.setUp();
         _deployContracts();
 
         bytes memory _config = _getConfig("uniswap");
@@ -37,6 +38,8 @@ contract UniswapTest is TestBase {
         //! Transfer config to LiquidityExamples
         // TODO: Need to modify the liquidity router contract
 
+        _depositToVault(user, 100e6);
+
         deal(address(config.DAI), address(liquidity), 10 ether);
         deal(address(config.USDC), address(liquidity), 10 ether);
 
@@ -47,7 +50,7 @@ contract UniswapTest is TestBase {
         });
 
         vm.recordLogs();
-        executor.execute(calls, address(liquidity));
+        executor.execute(calls, address(user));
 
         Vm.Log memory e = _getLogs(keccak256("IncreaseLiquidity(uint256,uint128,uint256,uint256)"));
         uint256 configId = uint256(e.topics[1]);
