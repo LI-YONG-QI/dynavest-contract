@@ -19,6 +19,11 @@ abstract contract TestBase is Test {
     uint256 constant userPrivateKey = 123;
     address immutable user = vm.addr(userPrivateKey);
 
+    //! For caching fork data, the block number is required
+    uint256 mainnetFork = vm.createFork("https://mainnet.infura.io/v3/b9fda36a1b28432485712d8d73975208", 21786590);
+    uint256 baseSepoliaFork =
+        vm.createFork("https://base-sepolia.infura.io/v3/b9fda36a1b28432485712d8d73975208", 21533254);
+
     function _approveTokens(IERC20 _token, address from, address spender, uint256 amount) internal {
         vm.startBroadcast(from);
 
@@ -27,8 +32,8 @@ abstract contract TestBase is Test {
         vm.stopBroadcast();
     }
 
-    function _buildConfigPath(uint256 chainId) private pure returns (string memory) {
-        return string.concat("configs/", chainId.toString(), ".json");
+    function _buildConfigPath(string memory contractName, uint256 chainId) private pure returns (string memory) {
+        return string.concat("configs/", contractName, "/", chainId.toString(), ".json");
     }
 
     function _deployContracts() internal {
@@ -36,14 +41,10 @@ abstract contract TestBase is Test {
         executor = new Executor(address(vault));
 
         _label();
-
-        // string memory configJson = vm.readFile(_buildConfigPath(block.chainid));
-        // bytes memory json = vm.parseJson(configJson);
-        // token = abi.decode(json, (Token));
     }
 
-    function _getConfig() internal view returns (bytes memory) {
-        string memory configJson = vm.readFile(_buildConfigPath(block.chainid));
+    function _getConfig(string memory contractName) internal view returns (bytes memory) {
+        string memory configJson = vm.readFile(_buildConfigPath(contractName, block.chainid));
         return vm.parseJson(configJson);
     }
 
@@ -52,6 +53,11 @@ abstract contract TestBase is Test {
         vm.label(address(vault), "vault");
         vm.label(address(executor), "executor");
     }
+
+    // function _createForks() internal {
+    //     baseSepoliaFork = vm.createFork("https://mainnet.infura.io/v3/311142eea537485aabe9b15954cb5960");
+    //     mainnetFork = vm.createFork("https://base-sepolia.infura.io/v3/311142eea537485aabe9b15954cb5960");
+    // }
 
     function _getLogs(bytes32 events) internal returns (Vm.Log memory) {
         Vm.Log[] memory entries = vm.getRecordedLogs();

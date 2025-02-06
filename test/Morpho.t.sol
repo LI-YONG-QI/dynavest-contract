@@ -24,9 +24,11 @@ contract MorphoTest is TestBase {
     MorphoConfig config;
 
     function setUp() public {
+        vm.selectFork(baseSepoliaFork);
+
         _deployContracts();
 
-        bytes memory _config = _getConfig();
+        bytes memory _config = _getConfig("morpho");
         config = abi.decode(_config, (MorphoConfig));
 
         deal(address(config.USDC), user, INIT_SUPPLY);

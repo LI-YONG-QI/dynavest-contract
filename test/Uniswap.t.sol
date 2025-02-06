@@ -10,25 +10,35 @@ import {INonfungiblePositionManager} from "v3-periphery/interfaces/INonfungibleP
 import {ILiquidityExamples, LiquidityExamples} from "./helpers/LiquidityExamples.sol";
 import {TestBase} from "./helpers/TestBase.sol";
 
+struct UniswapConfig {
+    IERC20 DAI;
+    IERC20 USDC;
+    address nftManager;
+}
+
 contract UniswapTest is TestBase {
     LiquidityExamples liquidity;
-
-    //* Uniswap
-    address constant nftManager = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
+    UniswapConfig config;
 
     function setUp() public {
-        _deployContracts();
-        liquidity = new LiquidityExamples(INonfungiblePositionManager(nftManager));
+        vm.selectFork(mainnetFork);
 
-        _fund(user, 1000e6);
+        _deployContracts();
+
+        bytes memory _config = _getConfig("uniswap");
+        config = abi.decode(_config, (UniswapConfig));
+
+        liquidity = new LiquidityExamples(INonfungiblePositionManager(config.nftManager));
+        deal(address(config.DAI), user, 1000e6);
+        deal(address(config.USDC), user, 1000e6);
     }
 
     function testUniswapLiquidity() public {
-        //! Transfer token to LiquidityExamples
+        //! Transfer config to LiquidityExamples
         // TODO: Need to modify the liquidity router contract
 
-        deal(address(DAI), address(liquidity), 10 ether);
-        deal(address(USDC), address(liquidity), 10 ether);
+        deal(address(config.DAI), address(liquidity), 10 ether);
+        deal(address(config.USDC), address(liquidity), 10 ether);
 
         Multicall3.Call[] memory calls = new Multicall3.Call[](1);
         calls[0] = Multicall3.Call({
@@ -40,8 +50,8 @@ contract UniswapTest is TestBase {
         executor.execute(calls, address(liquidity));
 
         Vm.Log memory e = _getLogs(keccak256("IncreaseLiquidity(uint256,uint128,uint256,uint256)"));
-        uint256 tokenId = uint256(e.topics[1]);
-        ILiquidityExamples.Deposit memory deposit = liquidity.getPosition(tokenId);
+        uint256 configId = uint256(e.topics[1]);
+        ILiquidityExamples.Deposit memory deposit = liquidity.getPosition(configId);
         console.log(deposit.owner);
     }
 }

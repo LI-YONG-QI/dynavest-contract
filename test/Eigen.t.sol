@@ -17,15 +17,13 @@ struct EigenConfig {
 }
 
 contract EigenTest is TestBase {
-    // address constant cbETHStrategy = 0x54945180dB7943c0ed0FEE7EdaB2Bd24620256bc;
-    // address constant manager = 0x858646372CC42E1A627fcE94aa7A7033e7CF075A;
-
     EigenConfig config;
 
     function setUp() public {
+        vm.selectFork(mainnetFork);
         _deployContracts();
 
-        bytes memory _config = _getConfig();
+        bytes memory _config = _getConfig("eigen");
         config = abi.decode(_config, (EigenConfig));
 
         deal(address(config.cbETH), user, 100e6);
