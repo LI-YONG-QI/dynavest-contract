@@ -16,7 +16,8 @@ contract Executor is Multicall3 {
         payable
         returns (uint256 blockNumber, bytes[] memory returnData)
     {
-        // require(vault.balances(sender) > calls.length * 1e6, "Executor: insufficient balance"); //TODO 1 USDC = 1 TX by default
+        require(vault.balances(sender) >= calls.length * 1e6, "Executor: insufficient balance"); //! 1 USDC = 1 TX by default
+
         // TODO transfer USDC to owner
         return aggregate(calls); //! send tx
     }
