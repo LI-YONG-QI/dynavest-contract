@@ -19,10 +19,13 @@ abstract contract TestBase is Test {
     uint256 constant userPrivateKey = 123;
     address immutable user = vm.addr(userPrivateKey);
 
+    address MOCK_USDC = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
+    IERC20 USDC = IERC20(MOCK_USDC);
+
     //! For caching fork data, the block number is required
-    uint256 mainnetFork = vm.createFork("https://mainnet.infura.io/v3/b9fda36a1b28432485712d8d73975208", 21786590);
-    uint256 baseSepoliaFork =
-        vm.createFork("https://base-sepolia.infura.io/v3/b9fda36a1b28432485712d8d73975208", 21533254);
+    string API_KEY = vm.envString("INFURA_KEY_API");
+    uint256 mainnetFork = vm.createFork(string.concat("https://mainnet.infura.io/v3/", API_KEY), 21786590);
+    uint256 baseSepoliaFork = vm.createFork(string.concat("https://base-sepolia.infura.io/v3/", API_KEY), 21533254);
 
     function _approveTokens(IERC20 _token, address from, address spender, uint256 amount) internal {
         vm.startBroadcast(from);
@@ -37,7 +40,7 @@ abstract contract TestBase is Test {
     }
 
     function _deployContracts() internal {
-        vault = new Vault(0x8720095Fa5739Ab051799211B146a2EEE4Dd8B37);
+        vault = new Vault(address(USDC));
         executor = new Executor(address(vault));
 
         _label();
@@ -53,11 +56,6 @@ abstract contract TestBase is Test {
         vm.label(address(vault), "vault");
         vm.label(address(executor), "executor");
     }
-
-    // function _createForks() internal {
-    //     baseSepoliaFork = vm.createFork("https://mainnet.infura.io/v3/311142eea537485aabe9b15954cb5960");
-    //     mainnetFork = vm.createFork("https://base-sepolia.infura.io/v3/311142eea537485aabe9b15954cb5960");
-    // }
 
     function _getLogs(bytes32 events) internal returns (Vm.Log memory) {
         Vm.Log[] memory entries = vm.getRecordedLogs();
