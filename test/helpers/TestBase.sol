@@ -27,8 +27,8 @@ abstract contract TestBase is Test {
     address immutable owner = makeAddr("OWNER");
 
     //! For caching fork data, the block number is required
-    string INFURA = vm.envString("INFURA_KEY_API");
-    string ALCHEMY = vm.envString("ALCHEMY_KEY_API");
+    string INFURA = vm.envString("INFURA_API_KEY");
+    string ALCHEMY = vm.envString("ALCHEMY_API_KEY");
 
     uint256 immutable mainnetFork = vm.createFork(string.concat("https://mainnet.infura.io/v3/", INFURA), 21786590);
     uint256 immutable baseSepoliaFork =
