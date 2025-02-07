@@ -41,7 +41,6 @@ contract MorphoTest is TestBase {
 
         deal(address(config.USDC), user, INIT_SUPPLY);
         uint256 amount = 5e6;
-        _approveTokens(config.USDC, user, address(executor), amount);
         bytes32 marketId = 0xe36464b73c0c39836918f7b2b9a6f1a8b70d7bb9901b38f29544d9b96119862e; // WETH/USDC market
 
         MarketParams memory params = MorphoLib.getMarketParams(marketId, config.morphoBlue);
