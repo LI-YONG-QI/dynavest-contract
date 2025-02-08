@@ -24,6 +24,14 @@ library SigUtils {
         uint256 deadline;
     }
 
+    struct DaiPermit {
+        address owner;
+        address spender;
+        uint256 nonce;
+        uint256 deadline;
+        bool allowed;
+    }
+
     function getDepositDigest(Deposit memory deposit, address manager) internal view returns (bytes32) {
         bytes32 DEPOSIT_TYPEHASH = keccak256(
             "Deposit(address staker,address strategy,address token,uint256 amount,uint256 nonce,uint256 expiry)"
@@ -45,6 +53,17 @@ library SigUtils {
             keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
         bytes32 structHash = keccak256(
             abi.encode(PERMIT_TYPEHASH, permit.owner, permit.spender, permit.value, permit.nonce, permit.deadline)
+        );
+        bytes32 digestHash = keccak256(abi.encodePacked("\x19\x01", IERC20Permit(token).DOMAIN_SEPARATOR(), structHash));
+
+        return digestHash;
+    }
+
+    function getDaiPermitDigest(DaiPermit memory permit, address token) internal view returns (bytes32) {
+        bytes32 PERMIT_TYPEHASH =
+            keccak256("Permit(address holder,address spender,uint256 nonce,uint256 expiry,bool allowed)");
+        bytes32 structHash = keccak256(
+            abi.encode(PERMIT_TYPEHASH, permit.owner, permit.spender, permit.nonce, permit.deadline, permit.allowed)
         );
         bytes32 digestHash = keccak256(abi.encodePacked("\x19\x01", IERC20Permit(token).DOMAIN_SEPARATOR(), structHash));
 

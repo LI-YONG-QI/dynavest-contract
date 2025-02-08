@@ -19,8 +19,8 @@ interface ILiquidityExamples {
 }
 
 contract LiquidityExamples is IERC721Receiver, ILiquidityExamples {
-    address public constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
-    address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+    address public immutable TOKEN0;
+    address public immutable TOKEN1;
     uint24 public constant poolFee = 3000;
 
     INonfungiblePositionManager public immutable nonfungiblePositionManager;
@@ -28,7 +28,9 @@ contract LiquidityExamples is IERC721Receiver, ILiquidityExamples {
     //  tokenId => Deposit
     mapping(uint256 => Deposit) public deposits;
 
-    constructor(INonfungiblePositionManager _nonfungiblePositionManager) {
+    constructor(INonfungiblePositionManager _nonfungiblePositionManager, address _token0, address _token1) {
+        TOKEN0 = _token0;
+        TOKEN1 = _token1;
         nonfungiblePositionManager = _nonfungiblePositionManager;
     }
 
@@ -46,18 +48,21 @@ contract LiquidityExamples is IERC721Receiver, ILiquidityExamples {
         deposits[tokenId] = Deposit(owner, liquidity, token0, token1);
     }
 
-    function mintNewPosition(uint256 amount0ToMint, uint256 amount1ToMint)
+    function mintNewPosition(address user, uint256 amount0ToMint, uint256 amount1ToMint)
         external
         returns (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1)
     {
+        TransferHelper.safeTransferFrom(TOKEN0, user, address(this), amount0ToMint);
+        TransferHelper.safeTransferFrom(TOKEN1, user, address(this), amount1ToMint);
+
         // Approve the position manager
-        TransferHelper.safeApprove(DAI, address(nonfungiblePositionManager), amount0ToMint);
-        TransferHelper.safeApprove(USDC, address(nonfungiblePositionManager), amount1ToMint);
+        TransferHelper.safeApprove(TOKEN0, address(nonfungiblePositionManager), amount0ToMint);
+        TransferHelper.safeApprove(TOKEN1, address(nonfungiblePositionManager), amount1ToMint);
 
         // Set MIN_TICK and MAX_TICK => provide liquidity to the whole range
         INonfungiblePositionManager.MintParams memory params = INonfungiblePositionManager.MintParams({
-            token0: DAI,
-            token1: USDC,
+            token0: TOKEN0,
+            token1: TOKEN1,
             fee: poolFee,
             tickLower: -887220,
             tickUpper: 887220,
@@ -65,25 +70,24 @@ contract LiquidityExamples is IERC721Receiver, ILiquidityExamples {
             amount1Desired: amount1ToMint,
             amount0Min: 0,
             amount1Min: 0,
-            recipient: address(this),
+            recipient: user,
             deadline: block.timestamp
         });
 
         (tokenId, liquidity, amount0, amount1) = nonfungiblePositionManager.mint(params);
-
-        _createDeposit(address(this), tokenId);
+        _createDeposit(user, tokenId);
 
         // Remove allowance and refund in both assets.
         if (amount0 < amount0ToMint) {
-            TransferHelper.safeApprove(DAI, address(nonfungiblePositionManager), 0);
+            TransferHelper.safeApprove(TOKEN0, address(nonfungiblePositionManager), 0);
             uint256 refund0 = amount0ToMint - amount0;
-            TransferHelper.safeTransfer(DAI, address(this), refund0);
+            TransferHelper.safeTransfer(TOKEN0, user, refund0);
         }
 
         if (amount1 < amount1ToMint) {
-            TransferHelper.safeApprove(USDC, address(nonfungiblePositionManager), 0);
+            TransferHelper.safeApprove(TOKEN1, address(nonfungiblePositionManager), 0);
             uint256 refund1 = amount1ToMint - amount1;
-            TransferHelper.safeTransfer(USDC, address(this), refund1);
+            TransferHelper.safeTransfer(TOKEN1, user, refund1);
         }
     }
 
