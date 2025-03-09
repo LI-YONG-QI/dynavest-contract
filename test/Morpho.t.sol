@@ -45,30 +45,11 @@ contract MorphoTest is TestBase {
 
         MarketParams memory params = MorphoLib.getMarketParams(marketId, config.morphoBlue);
 
-        //* Introduce permit signature
-        uint256 expiry = block.timestamp + 1000;
-        SigUtils.Permit memory permit =
-            SigUtils.Permit({owner: user, spender: address(executor), value: amount, nonce: 0, deadline: expiry});
-        (uint8 v, bytes32 r, bytes32 s) =
-            SigUtils.sign(userPrivateKey, SigUtils.getPermitDigest(permit, address(config.USDC)));
-
         //* Multicall
         Multicall3.Call[] memory calls = new Multicall3.Call[](4);
-
-        // TODO: Use `MorphoCallback` to eliminate this pre-transfer step
-        calls[0] = Multicall3.Call({
-            target: address(config.USDC),
-            callData: abi.encodeWithSignature(
-                "permit(address,address,uint256,uint256,uint8,bytes32,bytes32)",
-                permit.owner,
-                permit.spender,
-                permit.value,
-                permit.deadline,
-                v,
-                r,
-                s
-            )
-        });
+        _permitCall(
+            calls, userPrivateKey, address(config.USDC), user, address(executor), amount, 0, block.timestamp + 10000
+        );
 
         calls[1] = Multicall3.Call({
             target: address(config.USDC),

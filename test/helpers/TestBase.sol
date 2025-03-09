@@ -8,6 +8,9 @@ import {stdJson} from "forge-std/StdJson.sol";
 import {Strings} from "../libs/Strings.sol";
 import {Executor} from "../../src/Executor.sol";
 import {Vault} from "../../src/Vault.sol";
+import {SigUtils} from "../libs/SigUtils.sol";
+
+import {Multicall3} from "../../src/Multicall3.sol";
 
 struct TestConfig {
     IERC20 USDC;
@@ -92,5 +95,37 @@ abstract contract TestBase is Test {
         }
 
         revert("Event not found");
+    }
+
+    /// @notice build permit call in calls array
+    /// @dev permit call will exist in 0 index of calls array
+    function _permitCall(
+        Multicall3.Call[] memory calls,
+        uint256 ownerPrivateKey,
+        address token,
+        address _owner,
+        address _spender,
+        uint256 _value,
+        uint256 _nonce,
+        uint256 _deadline
+    ) internal view {
+        //* Introduce permit signature
+        SigUtils.Permit memory permit =
+            SigUtils.Permit({owner: _owner, spender: _spender, value: _value, nonce: _nonce, deadline: _deadline});
+        (uint8 v, bytes32 r, bytes32 s) = SigUtils.sign(ownerPrivateKey, SigUtils.getPermitDigest(permit, token));
+
+        calls[0] = Multicall3.Call({
+            target: token,
+            callData: abi.encodeWithSignature(
+                "permit(address,address,uint256,uint256,uint8,bytes32,bytes32)",
+                permit.owner,
+                permit.spender,
+                permit.value,
+                permit.deadline,
+                v,
+                r,
+                s
+            )
+        });
     }
 }

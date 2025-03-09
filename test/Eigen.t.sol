@@ -4,7 +4,7 @@ pragma solidity ^0.8.12;
 import {Test, console} from "forge-std/Test.sol";
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
 import {StdUtils} from "forge-std/StdUtils.sol";
-import {Multicall3} from "multicall/Multicall3.sol";
+import {Multicall3} from "../src/Multicall3.sol";
 
 import {SigUtils} from "./libs/SigUtils.sol";
 import {IStrategyManager} from "./helpers/IStrategyManager.sol";
@@ -46,26 +46,9 @@ contract EigenTest is TestBase {
         bytes memory depositSig =
             SigUtils.signAggregate(userPrivateKey, SigUtils.getDepositDigest(cbETHDeposit, config.manager));
 
-        SigUtils.Permit memory permit =
-            SigUtils.Permit({owner: user, spender: address(executor), value: 100e6, nonce: 0, deadline: expiry});
-        (uint8 v, bytes32 r, bytes32 s) =
-            SigUtils.sign(userPrivateKey, SigUtils.getPermitDigest(permit, address(config.cbETH)));
-
         //* Multicall
         Multicall3.Call[] memory calls = new Multicall3.Call[](4);
-        calls[0] = Multicall3.Call({
-            target: address(config.cbETH),
-            callData: abi.encodeWithSignature(
-                "permit(address,address,uint256,uint256,uint8,bytes32,bytes32)",
-                permit.owner,
-                permit.spender,
-                permit.value,
-                permit.deadline,
-                v,
-                r,
-                s
-            )
-        });
+        _permitCall(calls, userPrivateKey, address(config.cbETH), user, address(executor), 100e6, 0, expiry);
 
         calls[1] = Multicall3.Call({
             target: address(config.cbETH),
