@@ -4,7 +4,7 @@ pragma solidity ^0.8.12;
 import {Test, Vm, console} from "forge-std/Test.sol";
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
 import {StdUtils} from "forge-std/StdUtils.sol";
-import {Multicall3} from "multicall/Multicall3.sol";
+import {Multicall3} from "../src/Multicall3.sol";
 import {IMorpho, MarketParams, IMorphoStaticTyping, Id} from "morpho-blue/src/interfaces/IMorpho.sol";
 
 import {SigUtils} from "./libs/SigUtils.sol";

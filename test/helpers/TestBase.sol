@@ -35,6 +35,8 @@ abstract contract TestBase is Test {
         vm.createFork(string.concat("https://base-sepolia.infura.io/v3/", INFURA), 21533254);
     uint256 immutable holeskyFork =
         vm.createFork(string.concat("https://eth-holesky.g.alchemy.com/v2/", ALCHEMY), 3285618);
+    uint256 immutable sonicFork =
+        vm.createFork(string.concat("https://sonic-mainnet.g.alchemy.com/v2/", ALCHEMY), 12436736);
 
     function setUp() public virtual {
         bytes memory _config = _getConfig("vault");
