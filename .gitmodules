@@ -21,3 +21,9 @@
 	path = lib/v3-periphery
 	url = https://github.com/Uniswap/v3-periphery
 	branch = 0.8
+[submodule "lib/silo-contracts-v2"]
+	path = lib/silo-contracts-v2
+	url = https://github.com/silo-finance/silo-contracts-v2
+[submodule "lib/shadow-core"]
+	path = lib/shadow-core
+	url = https://github.com/Shadow-Exchange/shadow-core
