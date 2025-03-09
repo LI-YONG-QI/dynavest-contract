@@ -2,7 +2,7 @@
 pragma solidity ^0.8.12;
 
 import {IVault} from "./Vault.sol";
-import {Multicall3} from "multicall/Multicall3.sol";
+import {Multicall3} from "./Multicall3.sol";
 
 contract Executor is Multicall3 {
     IVault public vault;
