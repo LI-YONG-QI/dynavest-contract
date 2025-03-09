@@ -48,7 +48,7 @@ contract MorphoTest is TestBase {
         //* Multicall
         Multicall3.Call[] memory calls = new Multicall3.Call[](4);
         _callPermitAndTransfer(
-            calls, userPrivateKey, address(config.USDC), user, address(executor), amount, 0, block.timestamp + 10000
+            calls, 0, userPrivateKey, address(config.USDC), user, address(executor), amount, 0, block.timestamp + 10000
         );
 
         calls[2] = Multicall3.Call({

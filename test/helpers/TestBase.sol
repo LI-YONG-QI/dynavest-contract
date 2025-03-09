@@ -99,8 +99,39 @@ abstract contract TestBase is Test {
 
     /// @notice build permit call in calls array
     /// @dev permit call will exist in 0 index of calls array
+    function _callPermit(
+        Multicall3.Call[] memory calls,
+        uint256 index,
+        uint256 ownerPrivateKey,
+        address token,
+        address _owner,
+        address _spender,
+        uint256 _value,
+        uint256 _nonce,
+        uint256 _deadline
+    ) internal view {
+        SigUtils.Permit memory permit =
+            SigUtils.Permit({owner: _owner, spender: _spender, value: _value, nonce: _nonce, deadline: _deadline});
+        (uint8 v, bytes32 r, bytes32 s) = SigUtils.sign(ownerPrivateKey, SigUtils.getPermitDigest(permit, token));
+
+        calls[index] = Multicall3.Call({
+            target: token,
+            callData: abi.encodeWithSignature(
+                "permit(address,address,uint256,uint256,uint8,bytes32,bytes32)",
+                permit.owner,
+                permit.spender,
+                permit.value,
+                permit.deadline,
+                v,
+                r,
+                s
+            )
+        });
+    }
+
     function _callPermitAndTransfer(
         Multicall3.Call[] memory calls,
+        uint256 index,
         uint256 ownerPrivateKey,
         address token,
         address _owner,
@@ -114,7 +145,7 @@ abstract contract TestBase is Test {
             SigUtils.Permit({owner: _owner, spender: _spender, value: _value, nonce: _nonce, deadline: _deadline});
         (uint8 v, bytes32 r, bytes32 s) = SigUtils.sign(ownerPrivateKey, SigUtils.getPermitDigest(permit, token));
 
-        calls[0] = Multicall3.Call({
+        calls[index] = Multicall3.Call({
             target: token,
             callData: abi.encodeWithSignature(
                 "permit(address,address,uint256,uint256,uint8,bytes32,bytes32)",
@@ -128,10 +159,9 @@ abstract contract TestBase is Test {
             )
         });
 
-        calls[1] = Multicall3.Call({
+        calls[index + 1] = Multicall3.Call({
             target: token,
             callData: abi.encodeWithSignature("transferFrom(address,address,uint256)", _owner, _spender, _value)
         });
-
     }
 }
