@@ -48,12 +48,7 @@ contract EigenTest is TestBase {
 
         //* Multicall
         Multicall3.Call[] memory calls = new Multicall3.Call[](4);
-        _permitCall(calls, userPrivateKey, address(config.cbETH), user, address(executor), 100e6, 0, expiry);
-
-        calls[1] = Multicall3.Call({
-            target: address(config.cbETH),
-            callData: abi.encodeWithSignature("transferFrom(address,address,uint256)", user, address(executor), 100e6)
-        });
+        _callPermitAndTransfer(calls, userPrivateKey, address(config.cbETH), user, address(executor), 100e6, 0, expiry);
 
         calls[2] = Multicall3.Call({
             target: address(config.cbETH),

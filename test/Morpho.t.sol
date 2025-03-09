@@ -47,14 +47,9 @@ contract MorphoTest is TestBase {
 
         //* Multicall
         Multicall3.Call[] memory calls = new Multicall3.Call[](4);
-        _permitCall(
+        _callPermitAndTransfer(
             calls, userPrivateKey, address(config.USDC), user, address(executor), amount, 0, block.timestamp + 10000
         );
-
-        calls[1] = Multicall3.Call({
-            target: address(config.USDC),
-            callData: abi.encodeWithSignature("transferFrom(address,address,uint256)", user, executor, amount)
-        });
 
         calls[2] = Multicall3.Call({
             target: address(config.USDC),

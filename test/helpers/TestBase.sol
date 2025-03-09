@@ -99,7 +99,7 @@ abstract contract TestBase is Test {
 
     /// @notice build permit call in calls array
     /// @dev permit call will exist in 0 index of calls array
-    function _permitCall(
+    function _callPermitAndTransfer(
         Multicall3.Call[] memory calls,
         uint256 ownerPrivateKey,
         address token,
@@ -127,5 +127,11 @@ abstract contract TestBase is Test {
                 s
             )
         });
+
+        calls[1] = Multicall3.Call({
+            target: token,
+            callData: abi.encodeWithSignature("transferFrom(address,address,uint256)", _owner, _spender, _value)
+        });
+
     }
 }
