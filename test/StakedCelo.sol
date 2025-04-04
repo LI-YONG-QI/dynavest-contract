@@ -21,7 +21,7 @@ contract StakedCeloTest is TestBase {
         deal(user, DEPOSIT_AMOUNT + 1e18);
     }
 
-    function test_Deposit() public {
+    function test_LiquidStaking() public {
         vm.prank(user);
         IStakedCelo(STAKE_MANAGER).deposit{value: DEPOSIT_AMOUNT}();
 
