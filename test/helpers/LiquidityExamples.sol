@@ -21,16 +21,22 @@ interface ILiquidityExamples {
 contract LiquidityExamples is IERC721Receiver, ILiquidityExamples {
     address public immutable TOKEN0;
     address public immutable TOKEN1;
-    uint24 public constant poolFee = 3000;
+    uint24 public immutable poolFee;
 
     INonfungiblePositionManager public immutable nonfungiblePositionManager;
 
     //  tokenId => Deposit
     mapping(uint256 => Deposit) public deposits;
 
-    constructor(INonfungiblePositionManager _nonfungiblePositionManager, address _token0, address _token1) {
+    constructor(
+        INonfungiblePositionManager _nonfungiblePositionManager,
+        address _token0,
+        address _token1,
+        uint24 _poolFee
+    ) {
         TOKEN0 = _token0;
         TOKEN1 = _token1;
+        poolFee = _poolFee;
         nonfungiblePositionManager = _nonfungiblePositionManager;
     }
 

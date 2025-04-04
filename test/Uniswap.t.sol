@@ -12,8 +12,8 @@ import {TestBase} from "./helpers/TestBase.sol";
 import {SigUtils} from "./libs/SigUtils.sol";
 
 struct UniswapConfig {
-    IERC20 DAI;
-    IERC20 USDC;
+    IERC20 TOKEN0;
+    IERC20 TOKEN1;
     address nftManager;
 }
 
@@ -21,13 +21,16 @@ contract UniswapTest is TestBase {
     LiquidityExamples liquidityRouter;
     UniswapConfig config;
 
+    uint256 constant INIT_SUPPLY = 1000e6;
+    uint24 constant FEE = 100;
+
     function _fund() internal {
-        deal(address(config.DAI), user, 1000e6);
-        deal(address(config.USDC), user, 1000e6);
+        deal(address(config.TOKEN0), user, INIT_SUPPLY);
+        deal(address(config.TOKEN1), user, INIT_SUPPLY);
     }
 
     function setUp() public override {
-        vm.selectFork(mainnetFork);
+        vm.selectFork(celoFork);
 
         super.setUp();
         _deployContracts();
@@ -36,60 +39,55 @@ contract UniswapTest is TestBase {
         config = abi.decode(_config, (UniswapConfig));
 
         liquidityRouter = new LiquidityExamples(
-            INonfungiblePositionManager(config.nftManager), address(config.DAI), address(config.USDC)
+            INonfungiblePositionManager(config.nftManager), address(config.TOKEN0), address(config.TOKEN1), FEE
         );
+
+        _fund();
     }
 
     function testUniswapLiquidity() public {
         uint256 amount = 10e6;
-        _depositToVault(user, 100e6);
-        _fund();
 
         //* Introduce permit signature
         uint256 expiry = block.timestamp + 1000;
-        SigUtils.Permit memory usdcPermit =
+        SigUtils.Permit memory token0Permit =
             SigUtils.Permit({owner: user, spender: address(liquidityRouter), value: amount, nonce: 0, deadline: expiry});
-        (uint8 v, bytes32 r, bytes32 s) =
-            SigUtils.sign(userPrivateKey, SigUtils.getPermitDigest(usdcPermit, address(config.USDC)));
+        (uint8 token0PermitV, bytes32 token0PermitR, bytes32 token0PermitS) =
+            SigUtils.sign(userPrivateKey, SigUtils.getPermitDigest(token0Permit, address(config.TOKEN0)));
 
-        SigUtils.DaiPermit memory daiPermit = SigUtils.DaiPermit({
-            owner: user,
-            spender: address(liquidityRouter),
-            nonce: 0,
-            deadline: expiry,
-            allowed: true
-        });
-        (uint8 daiV, bytes32 daiR, bytes32 daiS) =
-            SigUtils.sign(userPrivateKey, SigUtils.getDaiPermitDigest(daiPermit, address(config.DAI)));
+        SigUtils.Permit memory token1Permit =
+            SigUtils.Permit({owner: user, spender: address(liquidityRouter), value: amount, nonce: 0, deadline: expiry});
+        (uint8 token1PermitV, bytes32 token1PermitR, bytes32 token1PermitS) =
+            SigUtils.sign(userPrivateKey, SigUtils.getPermitDigest(token1Permit, address(config.TOKEN1)));
 
         //* Multicall
         IMulticall3.Call[] memory calls = new IMulticall3.Call[](3);
+
         calls[0] = IMulticall3.Call({
-            target: address(config.USDC),
+            target: address(config.TOKEN0),
             callData: abi.encodeWithSignature(
                 "permit(address,address,uint256,uint256,uint8,bytes32,bytes32)",
-                usdcPermit.owner,
-                usdcPermit.spender,
-                usdcPermit.value,
-                usdcPermit.deadline,
-                v,
-                r,
-                s
+                token0Permit.owner,
+                token0Permit.spender,
+                token0Permit.value,
+                token0Permit.deadline,
+                token0PermitV,
+                token0PermitR,
+                token0PermitS
             )
         });
 
         calls[1] = IMulticall3.Call({
-            target: address(config.DAI),
+            target: address(config.TOKEN1),
             callData: abi.encodeWithSignature(
-                "permit(address,address,uint256,uint256,bool,uint8,bytes32,bytes32)",
-                daiPermit.owner,
-                daiPermit.spender,
-                daiPermit.nonce,
-                daiPermit.deadline,
-                daiPermit.allowed,
-                daiV,
-                daiR,
-                daiS
+                "permit(address,address,uint256,uint256,uint8,bytes32,bytes32)",
+                token1Permit.owner,
+                token1Permit.spender,
+                token1Permit.value,
+                token1Permit.deadline,
+                token1PermitV,
+                token1PermitR,
+                token1PermitS
             )
         });
 
