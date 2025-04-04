@@ -9,8 +9,7 @@ import {Strings} from "../libs/Strings.sol";
 import {Executor} from "../../src/Executor.sol";
 import {Vault} from "../../src/Vault.sol";
 import {SigUtils} from "../libs/SigUtils.sol";
-
-import {Multicall3} from "../../src/Multicall3.sol";
+import {IMulticall3} from "../../src/interfaces/IMulticall3.sol";
 
 struct TestConfig {
     IERC20 USDC;
@@ -26,8 +25,10 @@ abstract contract TestBase is Test {
     TestConfig baseConfig;
 
     uint256 constant userPrivateKey = 123;
+
     address immutable user = vm.addr(userPrivateKey);
     address immutable owner = makeAddr("OWNER");
+    address immutable MULTICALL3 = 0xcA11bde05977b3631167028862bE2a173976CA11;
 
     //! For caching fork data, the block number is required
     string INFURA = vm.envString("INFURA_API_KEY");
@@ -40,6 +41,10 @@ abstract contract TestBase is Test {
         vm.createFork(string.concat("https://eth-holesky.g.alchemy.com/v2/", ALCHEMY), 3285618);
     uint256 immutable sonicFork =
         vm.createFork(string.concat("https://sonic-mainnet.g.alchemy.com/v2/", ALCHEMY), 12436736);
+    uint256 immutable flowTestnetFork =
+        vm.createFork(string.concat("https://flow-testnet.g.alchemy.com/v2/", ALCHEMY), 40221150);
+    uint256 immutable flowFork =
+        vm.createFork(string.concat("https://flow-mainnet.g.alchemy.com/v2/", ALCHEMY), 22696707);
 
     function setUp() public virtual {
         bytes memory _config = _getConfig("vault");
@@ -57,7 +62,7 @@ abstract contract TestBase is Test {
 
     function _deployContracts() internal {
         vault = new Vault(owner, address(baseConfig.USDC));
-        executor = new Executor(address(vault));
+        executor = new Executor(MULTICALL3);
 
         _label();
     }
@@ -100,7 +105,7 @@ abstract contract TestBase is Test {
     /// @notice build permit call in calls array
     /// @dev permit call will exist in 0 index of calls array
     function _callPermit(
-        Multicall3.Call[] memory calls,
+        IMulticall3.Call[] memory calls,
         uint256 index,
         uint256 ownerPrivateKey,
         address token,
@@ -114,7 +119,7 @@ abstract contract TestBase is Test {
             SigUtils.Permit({owner: _owner, spender: _spender, value: _value, nonce: _nonce, deadline: _deadline});
         (uint8 v, bytes32 r, bytes32 s) = SigUtils.sign(ownerPrivateKey, SigUtils.getPermitDigest(permit, token));
 
-        calls[index] = Multicall3.Call({
+        calls[index] = IMulticall3.Call({
             target: token,
             callData: abi.encodeWithSignature(
                 "permit(address,address,uint256,uint256,uint8,bytes32,bytes32)",
@@ -130,7 +135,7 @@ abstract contract TestBase is Test {
     }
 
     function _callPermitAndTransfer(
-        Multicall3.Call[] memory calls,
+        IMulticall3.Call[] memory calls,
         uint256 index,
         uint256 ownerPrivateKey,
         address token,
@@ -145,7 +150,7 @@ abstract contract TestBase is Test {
             SigUtils.Permit({owner: _owner, spender: _spender, value: _value, nonce: _nonce, deadline: _deadline});
         (uint8 v, bytes32 r, bytes32 s) = SigUtils.sign(ownerPrivateKey, SigUtils.getPermitDigest(permit, token));
 
-        calls[index] = Multicall3.Call({
+        calls[index] = IMulticall3.Call({
             target: token,
             callData: abi.encodeWithSignature(
                 "permit(address,address,uint256,uint256,uint8,bytes32,bytes32)",
@@ -159,7 +164,7 @@ abstract contract TestBase is Test {
             )
         });
 
-        calls[index + 1] = Multicall3.Call({
+        calls[index + 1] = IMulticall3.Call({
             target: token,
             callData: abi.encodeWithSignature("transferFrom(address,address,uint256)", _owner, _spender, _value)
         });

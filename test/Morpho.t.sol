@@ -4,8 +4,8 @@ pragma solidity ^0.8.12;
 import {Test, Vm, console} from "forge-std/Test.sol";
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
 import {StdUtils} from "forge-std/StdUtils.sol";
-import {Multicall3} from "../src/Multicall3.sol";
 import {IMorpho, MarketParams, IMorphoStaticTyping, Id} from "morpho-blue/src/interfaces/IMorpho.sol";
+import {IMulticall3} from "../src/interfaces/IMulticall3.sol";
 
 import {SigUtils} from "./libs/SigUtils.sol";
 import {MorphoLib} from "./libs/MorphoLib.sol";
@@ -46,17 +46,17 @@ contract MorphoTest is TestBase {
         MarketParams memory params = MorphoLib.getMarketParams(marketId, config.morphoBlue);
 
         //* Multicall
-        Multicall3.Call[] memory calls = new Multicall3.Call[](4);
+        IMulticall3.Call[] memory calls = new IMulticall3.Call[](4);
         _callPermitAndTransfer(
             calls, 0, userPrivateKey, address(config.USDC), user, address(executor), amount, 0, block.timestamp + 10000
         );
 
-        calls[2] = Multicall3.Call({
+        calls[2] = IMulticall3.Call({
             target: address(config.USDC),
             callData: abi.encodeWithSignature("approve(address,uint256)", config.morphoBlue, amount)
         });
 
-        calls[3] = Multicall3.Call({
+        calls[3] = IMulticall3.Call({
             target: config.morphoBlue,
             callData: abi.encodeWithSignature(
                 "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",

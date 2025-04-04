@@ -2,8 +2,6 @@
 pragma solidity ^0.8.12;
 
 import {Test, console} from "forge-std/Test.sol";
-import {ISilo} from "silo-core/interfaces/ISilo.sol";
-import {IERC4626} from "openzeppelin5/interfaces/IERC4626.sol";
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
 import {TestBase} from "./helpers/TestBase.sol";
 import {SigUtils} from "./libs/SigUtils.sol";

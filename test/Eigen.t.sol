@@ -4,7 +4,7 @@ pragma solidity ^0.8.12;
 import {Test, console} from "forge-std/Test.sol";
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
 import {StdUtils} from "forge-std/StdUtils.sol";
-import {Multicall3} from "../src/Multicall3.sol";
+import {IMulticall3} from "../src/interfaces/IMulticall3.sol";
 
 import {SigUtils} from "./libs/SigUtils.sol";
 import {IStrategyManager} from "./helpers/IStrategyManager.sol";
@@ -47,15 +47,17 @@ contract EigenTest is TestBase {
             SigUtils.signAggregate(userPrivateKey, SigUtils.getDepositDigest(cbETHDeposit, config.manager));
 
         //* Multicall
-        Multicall3.Call[] memory calls = new Multicall3.Call[](4);
-        _callPermitAndTransfer(calls, 0, userPrivateKey, address(config.cbETH), user, address(executor), 100e6, 0, expiry);
+        IMulticall3.Call[] memory calls = new IMulticall3.Call[](4);
+        _callPermitAndTransfer(
+            calls, 0, userPrivateKey, address(config.cbETH), user, address(executor), 100e6, 0, expiry
+        );
 
-        calls[2] = Multicall3.Call({
+        calls[2] = IMulticall3.Call({
             target: address(config.cbETH),
             callData: abi.encodeWithSignature("approve(address,uint256)", config.manager, 100e6)
         });
 
-        calls[3] = Multicall3.Call({
+        calls[3] = IMulticall3.Call({
             target: address(config.manager),
             callData: abi.encodeWithSignature(
                 "depositIntoStrategyWithSignature(address,address,uint256,address,uint256,bytes)",
