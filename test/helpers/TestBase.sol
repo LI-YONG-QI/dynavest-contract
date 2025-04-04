@@ -45,6 +45,8 @@ abstract contract TestBase is Test {
         vm.createFork(string.concat("https://flow-testnet.g.alchemy.com/v2/", ALCHEMY), 40221150);
     uint256 immutable flowFork =
         vm.createFork(string.concat("https://flow-mainnet.g.alchemy.com/v2/", ALCHEMY), 22696707);
+    uint256 immutable celoFork =
+        vm.createFork(string.concat("https://celo-mainnet.g.alchemy.com/v2/", ALCHEMY), 31884686);
 
     function setUp() public virtual {
         bytes memory _config = _getConfig("vault");
@@ -62,7 +64,7 @@ abstract contract TestBase is Test {
 
     function _deployContracts() internal {
         vault = new Vault(owner, address(baseConfig.USDC));
-        executor = new Executor(MULTICALL3);
+        executor = new Executor();
 
         _label();
     }

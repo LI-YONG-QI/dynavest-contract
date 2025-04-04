@@ -12,7 +12,7 @@ contract ScriptVault is Script {
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
 
         Vault vault = new Vault(msg.sender, USDC);
-        Executor executor = new Executor(address(vault));
+        Executor executor = new Executor();
 
         vm.stopBroadcast();
 
