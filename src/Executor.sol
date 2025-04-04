@@ -2,22 +2,20 @@
 pragma solidity ^0.8.12;
 
 import {IMulticall3} from "./interfaces/IMulticall3.sol";
+import {Multicall3} from "./Multicall3.sol";
 
-contract Executor {
-    IMulticall3 public multicall;
+contract Executor is Multicall3 {
+    event Executed(address indexed sender, uint256 blockNumber, bytes[] returnData);
 
-    constructor(address _multicall) {
-        multicall = IMulticall3(_multicall);
-    }
-
-    function execute(IMulticall3.Call[] calldata calls, address sender)
+    function execute(Multicall3.Call[] calldata calls, address sender)
         public
         payable
-        returns (uint256 blockNumber, bytes[] memory returnData)
+        returns (uint256, bytes[] memory)
     {
         // TODO execution fee
-        return multicall.aggregate(calls); //! send tx
-    }
+        (uint256 blockNumber, bytes[] memory returnData) = aggregate(calls);
 
-    
+        emit Executed(sender, blockNumber, returnData);
+        return (blockNumber, returnData);
+    }
 }
