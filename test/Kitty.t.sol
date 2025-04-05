@@ -12,7 +12,7 @@ contract KittyTest is TestBase {
     address immutable ankrFLOWToken = 0x1b97100eA1D7126C4d60027e231EA4CB25314bdb;
     address immutable LPToken = 0x7296a9C350cad25fc69B47Ec839DCf601752C3C2;
 
-    uint256 constant ANKR_STAKE_AMOUNT = 1e18;
+    uint256 constant ANKR_STAKE_AMOUNT = 1e16;
 
     Strategy strategy;
 
@@ -45,5 +45,18 @@ contract KittyTest is TestBase {
         vm.stopPrank();
 
         assertGt(IERC20(ankrFLOWToken).balanceOf(user), 0);
+    }
+
+    function test_AddLiquidity() public {
+        deal(ankrFLOWToken, user, ANKR_STAKE_AMOUNT);
+
+        vm.startPrank(user);
+
+        IERC20(ankrFLOWToken).approve(KITTY, ANKR_STAKE_AMOUNT);
+
+        uint256[2] memory amounts = [uint256(0), ANKR_STAKE_AMOUNT];
+        (bool success,) = KITTY.call(abi.encodeWithSelector(0x0c3e4b54, amounts, 0, msg.sender)); // add liquidity
+
+        vm.stopPrank();
     }
 }
