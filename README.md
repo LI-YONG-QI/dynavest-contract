@@ -1,3 +1,6 @@
+## Important notice
+This repository was strictly developed within the official hackathon timeframe. All commits reflect real-time progress during the event. No pre-hackathon development was involved. Please check commits details for a comprehensive understanding of the development process.
+
 ## Foundry
 
 **Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
