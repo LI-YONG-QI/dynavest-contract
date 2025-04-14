@@ -47,6 +47,8 @@ abstract contract TestBase is Test {
         vm.createFork(string.concat("https://flow-mainnet.g.alchemy.com/v2/", ALCHEMY), 22696707);
     uint256 immutable celoFork =
         vm.createFork(string.concat("https://celo-mainnet.g.alchemy.com/v2/", ALCHEMY), 31884686);
+    uint256 immutable baseFork =
+        vm.createFork(string.concat("https://base-mainnet.g.alchemy.com/v2/", ALCHEMY), 28924840);
 
     function setUp() public virtual {
         bytes memory _config = _getConfig("vault");
