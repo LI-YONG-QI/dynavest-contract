@@ -27,9 +27,6 @@
 [submodule "lib/shadow-core"]
 	path = lib/shadow-core
 	url = https://github.com/Shadow-Exchange/shadow-core
-[submodule "lib/universal-router"]
-	path = lib/universal-router
-	url = https://github.com/Uniswap/universal-router
 [submodule "lib/permit2"]
 	path = lib/permit2
 	url = https://github.com/Uniswap/permit2

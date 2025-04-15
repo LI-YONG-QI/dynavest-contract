@@ -7,21 +7,32 @@ import {TickMath} from "v3-core/contracts/libraries/TickMath.sol";
 import {IMulticall} from "v3-periphery/interfaces/IMulticall.sol";
 import {INonfungiblePositionManager} from "v3-periphery/interfaces/INonfungiblePositionManager.sol";
 import {IPeripheryPayments} from "v3-periphery/interfaces/IPeripheryPayments.sol";
+import {IAllowanceTransfer} from "permit2/src/interfaces/IAllowanceTransfer.sol";
+import {IPermit2} from "permit2/src/interfaces/IPermit2.sol";
+import {PermitHash} from "permit2/src/libraries/PermitHash.sol";
+import {PermitSignature} from "permit2/test/utils/PermitSignature.sol";
 
 import {ILiquidityExamples, LiquidityExamples} from "./helpers/LiquidityExamples.sol";
 import {IMulticall3} from "../src/interfaces/IMulticall3.sol";
 import {TestBase} from "./helpers/TestBase.sol";
+import {IV3SwapRouter} from "./helpers/IV3SwapRouter.sol";
 import {SigUtils} from "./libs/SigUtils.sol";
+import {Commands} from "./helpers/Commands.sol";
+import {IUniversalRouter} from "./helpers/IUniversalRouter.sol";
 
 struct UniswapConfig {
     IERC20 TOKEN0;
     IERC20 TOKEN1;
     address nftManager;
+    address router;
+    address universalRouter;
 }
 
-contract UniswapTest is TestBase {
+contract UniswapTest is TestBase, PermitSignature {
     LiquidityExamples liquidityRouter;
     UniswapConfig config;
+
+    using PermitHash for IAllowanceTransfer.PermitSingle;
 
     uint256 constant INIT_SUPPLY = 10e18;
     uint24 constant FEE = 100;
@@ -183,6 +194,121 @@ contract UniswapTest is TestBase {
     }
 
     function test_AddLiquidityWithOneSideToken() public {
-        uint256 amount0ToMint = 100e6;
+        uint256 amount0ToMint = 100e6 / 2;
+        uint256 beforeToken1Balance = IERC20(config.TOKEN1).balanceOf(user);
+
+        vm.startPrank(user);
+        IERC20(config.TOKEN0).approve(config.router, amount0ToMint);
+
+        IV3SwapRouter.ExactInputSingleParams memory params = IV3SwapRouter.ExactInputSingleParams({
+            tokenIn: address(config.TOKEN0),
+            tokenOut: address(config.TOKEN1),
+            fee: FEE,
+            recipient: user,
+            amountIn: amount0ToMint,
+            amountOutMinimum: 0, //! 0 = no limit
+            sqrtPriceLimitX96: 0 //! 0 = no limit
+        });
+
+        (uint256 amountOut) = IV3SwapRouter(config.router).exactInputSingle(params);
+
+        IERC20(config.TOKEN1).approve(config.nftManager, amountOut);
+        IERC20(config.TOKEN0).approve(config.nftManager, amount0ToMint);
+
+        INonfungiblePositionManager.MintParams memory mintParams = INonfungiblePositionManager.MintParams({
+            token0: address(config.TOKEN0),
+            token1: address(config.TOKEN1),
+            fee: FEE,
+            tickLower: -887220,
+            tickUpper: 887220,
+            amount0Desired: amount0ToMint,
+            amount1Desired: amountOut,
+            amount0Min: 0,
+            amount1Min: 0,
+            recipient: user,
+            deadline: block.timestamp
+        });
+
+        bytes memory mintCall = abi.encodeWithSelector(
+            INonfungiblePositionManager.mint.selector,
+            mintParams.token0,
+            mintParams.token1,
+            mintParams.fee,
+            mintParams.tickLower,
+            mintParams.tickUpper,
+            mintParams.amount0Desired,
+            mintParams.amount1Desired,
+            mintParams.amount0Min,
+            mintParams.amount1Min,
+            mintParams.recipient,
+            mintParams.deadline
+        );
+
+        bytes[] memory calls = new bytes[](1);
+        calls[0] = mintCall;
+
+        vm.startPrank(user);
+        IMulticall(config.nftManager).multicall(calls);
+    }
+
+    function test_Permit2Permit() public {
+        uint256 amount0ToMint = INIT_SUPPLY / 2;
+
+        IPermit2 permit2 = IPermit2(0x000000000022D473030F116dDEE9F6B43aC78BA3);
+        IAllowanceTransfer.PermitSingle memory permitSingle = IAllowanceTransfer.PermitSingle({
+            details: IAllowanceTransfer.PermitDetails({
+                token: address(config.TOKEN0),
+                amount: uint160(amount0ToMint),
+                expiration: uint48(block.timestamp + 10000),
+                nonce: 0
+            }),
+            spender: address(config.router),
+            sigDeadline: block.timestamp + 10000
+        });
+
+        bytes32 DOMAIN_SEPARATOR = permit2.DOMAIN_SEPARATOR();
+        bytes memory sig = PermitSignature.getPermitSignature(permitSingle, userPrivateKey, DOMAIN_SEPARATOR);
+
+        permit2.permit(user, permitSingle, sig);
+        (uint160 amount, uint48 expiration, uint48 nonce) =
+            permit2.allowance(user, address(config.TOKEN0), address(config.router));
+
+        assertEq(amount, amount0ToMint);
+        assertEq(expiration, permitSingle.details.expiration);
+        assertEq(nonce, 1 );
+    }
+
+    function test_AddLiquidityWithOneSidePermit() public {
+        uint256 amount0ToMint = INIT_SUPPLY / 2;
+
+        bytes memory commands = abi.encodePacked(bytes1(uint8(Commands.PERMIT2_PERMIT)));
+        bytes memory permitData = abi.encode(
+            IAllowanceTransfer.PermitSingle({
+                details: IAllowanceTransfer.PermitDetails({
+                    token: address(config.TOKEN0),
+                    amount: uint160(amount0ToMint),
+                    expiration: uint48(block.timestamp + 10000),
+                    nonce: 0
+                }),
+                spender: address(config.router),
+                sigDeadline: block.timestamp + 10000
+            })
+        );
+
+        bytes32 digest = SigUtils.getPermitDigest(
+            SigUtils.Permit({
+                owner: user,
+                spender: address(config.router),
+                value: amount0ToMint,
+                nonce: 0,
+                deadline: block.timestamp + 10000
+            }),
+            address(config.TOKEN0)
+        );
+
+        bytes[] memory inputs = new bytes[](1);
+        inputs[0] = permitData;
+
+        IUniversalRouter(config.universalRouter).execute(commands, inputs, block.timestamp + 10000);
     }
 }

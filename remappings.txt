@@ -19,3 +19,4 @@ zeus-templates/=lib/eigenlayer-contracts/lib/zeus-templates/src/
 @uniswap/v3-core/=lib/v3-core/
 @openzeppelin/contracts/token/ERC721/IERC721Metadata.sol=lib/eigenlayer-contracts/lib/openzeppelin-contracts-v4.9.0/contracts/contracts/token/ERC721/extensions/IERC721Metadata.sol
 shadow-core/=lib/shadow-core/contracts
+permit2/=lib/permit2/
