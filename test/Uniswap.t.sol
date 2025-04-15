@@ -3,11 +3,13 @@ pragma solidity ^0.8.12;
 
 import {Test, Vm, console} from "forge-std/Test.sol";
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
-import {IMulticall3} from "../src/interfaces/IMulticall3.sol";
 import {TickMath} from "v3-core/contracts/libraries/TickMath.sol";
+import {IMulticall} from "v3-periphery/interfaces/IMulticall.sol";
 import {INonfungiblePositionManager} from "v3-periphery/interfaces/INonfungiblePositionManager.sol";
+import {IPeripheryPayments} from "v3-periphery/interfaces/IPeripheryPayments.sol";
 
 import {ILiquidityExamples, LiquidityExamples} from "./helpers/LiquidityExamples.sol";
+import {IMulticall3} from "../src/interfaces/IMulticall3.sol";
 import {TestBase} from "./helpers/TestBase.sol";
 import {SigUtils} from "./libs/SigUtils.sol";
 
@@ -45,7 +47,7 @@ contract UniswapTest is TestBase {
         _fund();
     }
 
-    function testUniswapLiquidity() public {
+    function test_AddLiquidityWithPermit() public {
         uint256 amount = 10e6;
 
         //* Introduce permit signature
@@ -106,7 +108,7 @@ contract UniswapTest is TestBase {
         assertEq(deposit.owner, user);
     }
 
-    function test_AddLiquidityWithNFTManagerMultiCall() public {
+    function test_AddLiquidityWithNFTManager() public {
         // Note: parameters are from https://app.blocksec.com/explorer/tx/base/0x793c0add695f68aad2c6e6ead731127f6bc0f93b59bc6a7820935fe6cc5694cb?line=22
         uint256 amount0ToMint = 601933840884576;
         uint256 amount1ToMint = 10e6;
@@ -131,10 +133,56 @@ contract UniswapTest is TestBase {
         });
 
         (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1) = nftManager.mint(params);
+    }
 
-        console.log("tokenId", tokenId);
-        console.log("liquidity", liquidity);
-        console.log("amount0", amount0);
-        console.log("amount1", amount1);
+    function test_AddLiquidityWithNFTManagerMultiCall() public {
+        uint256 amount0ToMint = 601933840884576;
+        uint256 amount1ToMint = 10e6;
+
+        vm.startPrank(user);
+        IERC20(config.TOKEN0).approve(config.nftManager, amount0ToMint);
+        IERC20(config.TOKEN1).approve(config.nftManager, amount1ToMint);
+
+        INonfungiblePositionManager nftManager = INonfungiblePositionManager(config.nftManager);
+        INonfungiblePositionManager.MintParams memory params = INonfungiblePositionManager.MintParams({
+            token0: address(config.TOKEN0),
+            token1: address(config.TOKEN1),
+            fee: FEE,
+            tickLower: -887220,
+            tickUpper: 887220,
+            amount0Desired: amount0ToMint,
+            amount1Desired: amount1ToMint,
+            amount0Min: 0,
+            amount1Min: 0,
+            recipient: user,
+            deadline: block.timestamp
+        });
+
+        bytes memory mintCall = abi.encodeWithSelector(
+            INonfungiblePositionManager.mint.selector,
+            params.token0,
+            params.token1,
+            params.fee,
+            params.tickLower,
+            params.tickUpper,
+            params.amount0Desired,
+            params.amount1Desired,
+            params.amount0Min,
+            params.amount1Min,
+            params.recipient,
+            params.deadline
+        );
+
+        bytes memory refundCall = abi.encodeWithSelector(IPeripheryPayments.refundETH.selector, 0, user);
+
+        bytes[] memory calls = new bytes[](2);
+        calls[0] = mintCall;
+        calls[1] = refundCall;
+
+        IMulticall(config.nftManager).multicall(calls);
+    }
+
+    function test_AddLiquidityWithOneSideToken() public {
+        uint256 amount0ToMint = 100e6;
     }
 }
