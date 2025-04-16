@@ -143,7 +143,7 @@ contract UniswapTest is TestBase, PermitSignature {
             deadline: block.timestamp
         });
 
-        (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1) = nftManager.mint(params);
+        nftManager.mint(params);
     }
 
     function test_AddLiquidityWithNFTManagerMultiCall() public {
@@ -254,7 +254,7 @@ contract UniswapTest is TestBase, PermitSignature {
     function test_Permit2Permit() public {
         uint256 amount0ToMint = INIT_SUPPLY / 2;
 
-        IPermit2 permit2 = IPermit2(0x000000000022D473030F116dDEE9F6B43aC78BA3);
+        IPermit2 permit2 = IPermit2(0x000000000022D473030F116dDEE9F6B43aC78BA3); // TODO: hardcode
         IAllowanceTransfer.PermitSingle memory permitSingle = IAllowanceTransfer.PermitSingle({
             details: IAllowanceTransfer.PermitDetails({
                 token: address(config.TOKEN0),
@@ -275,40 +275,45 @@ contract UniswapTest is TestBase, PermitSignature {
 
         assertEq(amount, amount0ToMint);
         assertEq(expiration, permitSingle.details.expiration);
-        assertEq(nonce, 1 );
+        assertEq(nonce, 1);
     }
 
-    function test_AddLiquidityWithOneSidePermit() public {
+    // TODO: fail test
+    function test_PermitAndSwapTokenWithUniversalRouter() public {
         uint256 amount0ToMint = INIT_SUPPLY / 2;
+        IPermit2 permit2 = IPermit2(0x000000000022D473030F116dDEE9F6B43aC78BA3); // TODO: hardcode
 
-        bytes memory commands = abi.encodePacked(bytes1(uint8(Commands.PERMIT2_PERMIT)));
-        bytes memory permitData = abi.encode(
-            IAllowanceTransfer.PermitSingle({
-                details: IAllowanceTransfer.PermitDetails({
-                    token: address(config.TOKEN0),
-                    amount: uint160(amount0ToMint),
-                    expiration: uint48(block.timestamp + 10000),
-                    nonce: 0
-                }),
-                spender: address(config.router),
-                sigDeadline: block.timestamp + 10000
-            })
-        );
+        bytes memory commands = abi.encodePacked(bytes1(uint8(Commands.V3_SWAP_EXACT_IN)));
 
-        bytes32 digest = SigUtils.getPermitDigest(
-            SigUtils.Permit({
-                owner: user,
-                spender: address(config.router),
-                value: amount0ToMint,
-                nonce: 0,
-                deadline: block.timestamp + 10000
+        console.logBytes(commands);
+
+        // Note: permit command input (permit2)
+        IAllowanceTransfer.PermitSingle memory permitSingle = IAllowanceTransfer.PermitSingle({
+            details: IAllowanceTransfer.PermitDetails({
+                token: address(config.TOKEN0),
+                amount: uint160(amount0ToMint),
+                expiration: uint48(block.timestamp + 10000),
+                nonce: 0
             }),
-            address(config.TOKEN0)
-        );
+            spender: address(config.universalRouter),
+            sigDeadline: block.timestamp + 10000
+        });
+        bytes32 DOMAIN_SEPARATOR = permit2.DOMAIN_SEPARATOR();
+        bytes memory sig = PermitSignature.getPermitSignature(permitSingle, userPrivateKey, DOMAIN_SEPARATOR);
+
+        // Note: swap command input
+        // address[] memory path = new address[](2);
+        // path[0] = address(config.TOKEN0);
+        // path[1] = address(config.TOKEN1);
+
+        bytes memory path = abi.encodePacked(address(config.TOKEN0), uint24(100), address(config.TOKEN1));
+        bytes memory swapCall = abi.encode(user, amount0ToMint, 0, path, false);
 
         bytes[] memory inputs = new bytes[](1);
-        inputs[0] = permitData;
+        // inputs[0] = abi.encode(permitSingle, sig);
+        inputs[0] = swapCall;
 
+        vm.prank(user);
         IUniversalRouter(config.universalRouter).execute(commands, inputs, block.timestamp + 10000);
     }
 }
