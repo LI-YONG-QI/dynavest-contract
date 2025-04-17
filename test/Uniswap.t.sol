@@ -195,7 +195,7 @@ contract UniswapTest is TestBase, PermitSignature {
 
     function test_AddLiquidityWithOneSideToken() public {
         uint256 amount0ToMint = 100e6 / 2;
-        uint256 beforeToken1Balance = IERC20(config.TOKEN1).balanceOf(user);
+        // uint256 beforeToken1Balance = IERC20(config.TOKEN1).balanceOf(user);
 
         vm.startPrank(user);
         IERC20(config.TOKEN0).approve(config.router, amount0ToMint);
@@ -253,8 +253,12 @@ contract UniswapTest is TestBase, PermitSignature {
 
     function test_Permit2Permit() public {
         uint256 amount0ToMint = INIT_SUPPLY / 2;
+        address spender = address(this);
 
         IPermit2 permit2 = IPermit2(0x000000000022D473030F116dDEE9F6B43aC78BA3); // TODO: hardcode
+        vm.prank(user);
+        IERC20(config.TOKEN0).approve(address(permit2), type(uint256).max);
+
         IAllowanceTransfer.PermitSingle memory permitSingle = IAllowanceTransfer.PermitSingle({
             details: IAllowanceTransfer.PermitDetails({
                 token: address(config.TOKEN0),
@@ -262,7 +266,7 @@ contract UniswapTest is TestBase, PermitSignature {
                 expiration: uint48(block.timestamp + 10000),
                 nonce: 0
             }),
-            spender: address(config.router),
+            spender: spender,
             sigDeadline: block.timestamp + 10000
         });
 
@@ -270,12 +274,13 @@ contract UniswapTest is TestBase, PermitSignature {
         bytes memory sig = PermitSignature.getPermitSignature(permitSingle, userPrivateKey, DOMAIN_SEPARATOR);
 
         permit2.permit(user, permitSingle, sig);
-        (uint160 amount, uint48 expiration, uint48 nonce) =
-            permit2.allowance(user, address(config.TOKEN0), address(config.router));
+        (uint160 amount, uint48 expiration, uint48 nonce) = permit2.allowance(user, address(config.TOKEN0), spender);
 
         assertEq(amount, amount0ToMint);
         assertEq(expiration, permitSingle.details.expiration);
         assertEq(nonce, 1);
+
+        permit2.transferFrom(user, address(config.router), amount, address(config.TOKEN0));
     }
 
     // TODO: fail test
@@ -283,9 +288,11 @@ contract UniswapTest is TestBase, PermitSignature {
         uint256 amount0ToMint = INIT_SUPPLY / 2;
         IPermit2 permit2 = IPermit2(0x000000000022D473030F116dDEE9F6B43aC78BA3); // TODO: hardcode
 
-        bytes memory commands = abi.encodePacked(bytes1(uint8(Commands.V3_SWAP_EXACT_IN)));
+        bytes memory commands =
+            abi.encodePacked(bytes1(uint8(Commands.PERMIT2_PERMIT)), bytes1(uint8(Commands.V3_SWAP_EXACT_IN)));
 
-        console.logBytes(commands);
+        vm.prank(user);
+        IERC20(config.TOKEN0).approve(address(permit2), type(uint256).max);
 
         // Note: permit command input (permit2)
         IAllowanceTransfer.PermitSingle memory permitSingle = IAllowanceTransfer.PermitSingle({
@@ -307,11 +314,11 @@ contract UniswapTest is TestBase, PermitSignature {
         // path[1] = address(config.TOKEN1);
 
         bytes memory path = abi.encodePacked(address(config.TOKEN0), uint24(100), address(config.TOKEN1));
-        bytes memory swapCall = abi.encode(user, amount0ToMint, 0, path, false);
+        bytes memory swapCall = abi.encode(address(this), amount0ToMint, 0, path, true);
 
-        bytes[] memory inputs = new bytes[](1);
-        // inputs[0] = abi.encode(permitSingle, sig);
-        inputs[0] = swapCall;
+        bytes[] memory inputs = new bytes[](2);
+        inputs[0] = abi.encode(permitSingle, sig);
+        inputs[1] = swapCall;
 
         vm.prank(user);
         IUniversalRouter(config.universalRouter).execute(commands, inputs, block.timestamp + 10000);
