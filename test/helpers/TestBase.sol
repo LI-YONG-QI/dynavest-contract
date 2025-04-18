@@ -42,9 +42,7 @@ abstract contract TestBase is Test {
     uint256 immutable baseFork =
         vm.createFork(string.concat("https://base-mainnet.g.alchemy.com/v2/", ALCHEMY), 28924840);
 
-    function setUp() public virtual {
-        bytes memory _config = _getConfig("vault");
-    }
+    function setUp() public virtual {}
 
     function _approveTokens(IERC20 _token, address from, address spender, uint256 amount) internal {
         vm.prank(from);

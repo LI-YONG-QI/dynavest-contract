@@ -283,7 +283,6 @@ contract UniswapTest is TestBase, PermitSignature {
         permit2.transferFrom(user, address(config.router), amount, address(config.TOKEN0));
     }
 
-    // TODO: fail test
     function test_PermitAndSwapTokenWithUniversalRouter() public {
         uint256 amount0ToMint = INIT_SUPPLY / 2;
         IPermit2 permit2 = IPermit2(0x000000000022D473030F116dDEE9F6B43aC78BA3); // TODO: hardcode
