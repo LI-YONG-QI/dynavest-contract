@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity ^0.8.12;
 
-import {Test, console} from "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
 import {TestBase} from "./helpers/TestBase.sol";
-import {SigUtils} from "./libs/SigUtils.sol";
 
 interface IBeetsStaking is IERC20 {
     function deposit() external payable returns (uint256);

@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity ^0.8.12;
 
-import {Test, Vm, console} from "forge-std/Test.sol";
+import {Test, Vm} from "forge-std/Test.sol";
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
-import {TickMath} from "v3-core/contracts/libraries/TickMath.sol";
 import {IMulticall} from "v3-periphery/interfaces/IMulticall.sol";
 import {INonfungiblePositionManager} from "v3-periphery/interfaces/INonfungiblePositionManager.sol";
 import {IPeripheryPayments} from "v3-periphery/interfaces/IPeripheryPayments.sol";
