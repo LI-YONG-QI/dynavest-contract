@@ -2,7 +2,7 @@ pragma solidity ^0.8.12;
 
 import {Script, console} from "forge-std/Script.sol";
 
-import {Strategy} from "../src/Strategy.sol";
+import {Strategy} from "../../src/legacy/Strategy.sol";
 
 contract ScriptExecutor is Script {
     function run() public {

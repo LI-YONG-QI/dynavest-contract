@@ -37,8 +37,6 @@ contract MorphoTest is TestBase {
 
     //* Supply directly USDC to cbETH/USDC market
     function testMorphoCall() public {
-        _depositToVault(user, 5e6);
-
         deal(address(config.USDC), user, INIT_SUPPLY);
         uint256 amount = 5e6;
         bytes32 marketId = 0xe36464b73c0c39836918f7b2b9a6f1a8b70d7bb9901b38f29544d9b96119862e; // WETH/USDC market

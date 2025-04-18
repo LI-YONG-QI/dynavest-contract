@@ -2,7 +2,7 @@
 pragma solidity ^0.8.12;
 
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
-import {IStrategy} from "./interfaces/IStrategy.sol";
+import {IStrategy} from "../interfaces/IStrategy.sol";
 
 contract Strategy is IStrategy {
     // TODO: Flow EVM Mainnet Hardcoded

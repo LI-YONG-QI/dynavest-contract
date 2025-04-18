@@ -3,7 +3,7 @@ pragma solidity ^0.8.12;
 
 import {TestBase} from "./helpers/TestBase.sol";
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
-import {Strategy} from "../src/Strategy.sol";
+import {Strategy} from "../src/legacy/Strategy.sol";
 
 contract KittyTest is TestBase {
     // TODO: only for Flow EVM Mainnet

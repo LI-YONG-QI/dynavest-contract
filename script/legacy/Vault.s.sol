@@ -2,8 +2,8 @@ pragma solidity ^0.8.12;
 
 import {Script, console} from "forge-std/Script.sol";
 
-import {Vault} from "../src/Vault.sol";
-import {Executor} from "../src/Executor.sol";
+import {Vault} from "../../src/legacy/Vault.sol";
+import {Executor} from "../../src/Executor.sol";
 
 contract ScriptVault is Script {
     address constant USDC = 0x036CbD53842c5426634e7929541eC2318f3dCF7e; //? Base sepolia
