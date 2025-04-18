@@ -3,11 +3,9 @@ pragma solidity ^0.8.12;
 
 import {Test, Vm, console} from "forge-std/Test.sol";
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
-import {StdUtils} from "forge-std/StdUtils.sol";
 import {IMorpho, MarketParams, IMorphoStaticTyping, Id} from "morpho-blue/src/interfaces/IMorpho.sol";
 import {IMulticall3} from "../src/interfaces/IMulticall3.sol";
 
-import {SigUtils} from "./libs/SigUtils.sol";
 import {MorphoLib} from "./libs/MorphoLib.sol";
 import {TestBase} from "./helpers/TestBase.sol";
 
@@ -37,8 +35,6 @@ contract MorphoTest is TestBase {
 
     //* Supply directly USDC to cbETH/USDC market
     function testMorphoCall() public {
-        _depositToVault(user, 5e6);
-
         deal(address(config.USDC), user, INIT_SUPPLY);
         uint256 amount = 5e6;
         bytes32 marketId = 0xe36464b73c0c39836918f7b2b9a6f1a8b70d7bb9901b38f29544d9b96119862e; // WETH/USDC market

@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity ^0.8.12;
 
-import {Test, console} from "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
-import {StdUtils} from "forge-std/StdUtils.sol";
 import {IMulticall3} from "../src/interfaces/IMulticall3.sol";
 
 import {SigUtils} from "./libs/SigUtils.sol";
-import {IStrategyManager} from "./helpers/IStrategyManager.sol";
 import {TestBase} from "./helpers/TestBase.sol";
 
 struct EigenConfig {
@@ -32,8 +30,6 @@ contract EigenTest is TestBase {
     }
 
     function testEigenCall() public {
-        _depositToVault(user, 4e6);
-
         //* Introduce signature
         uint256 expiry = block.timestamp + 1000;
         SigUtils.Deposit memory cbETHDeposit = SigUtils.Deposit({

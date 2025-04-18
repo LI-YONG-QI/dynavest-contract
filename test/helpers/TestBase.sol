@@ -7,22 +7,14 @@ import {Test, console} from "forge-std/Test.sol";
 import {stdJson} from "forge-std/StdJson.sol";
 import {Strings} from "../libs/Strings.sol";
 import {Executor} from "../../src/Executor.sol";
-import {Vault} from "../../src/Vault.sol";
 import {SigUtils} from "../libs/SigUtils.sol";
 import {IMulticall3} from "../../src/interfaces/IMulticall3.sol";
-
-struct TestConfig {
-    IERC20 USDC;
-}
 
 abstract contract TestBase is Test {
     using stdJson for *;
     using Strings for *;
 
     Executor executor;
-    Vault vault;
-
-    TestConfig baseConfig;
 
     uint256 constant userPrivateKey = 123;
 
@@ -50,10 +42,7 @@ abstract contract TestBase is Test {
     uint256 immutable baseFork =
         vm.createFork(string.concat("https://base-mainnet.g.alchemy.com/v2/", ALCHEMY), 28924840);
 
-    function setUp() public virtual {
-        bytes memory _config = _getConfig("vault");
-        baseConfig = abi.decode(_config, (TestConfig));
-    }
+    function setUp() public virtual {}
 
     function _approveTokens(IERC20 _token, address from, address spender, uint256 amount) internal {
         vm.prank(from);
@@ -65,7 +54,6 @@ abstract contract TestBase is Test {
     }
 
     function _deployContracts() internal {
-        vault = new Vault(owner, address(baseConfig.USDC));
         executor = new Executor();
 
         _label();
@@ -78,19 +66,7 @@ abstract contract TestBase is Test {
 
     function _label() private {
         vm.label(user, "user");
-        vm.label(address(vault), "vault");
         vm.label(address(executor), "executor");
-    }
-
-    function _depositToVault(address caller, uint256 amount) internal {
-        deal(address(baseConfig.USDC), caller, amount);
-
-        vm.startPrank(caller);
-
-        baseConfig.USDC.approve(address(vault), amount);
-        vault.deposit(amount);
-
-        vm.stopPrank();
     }
 
     function _getLogs(bytes32 events) internal returns (Vm.Log memory) {
