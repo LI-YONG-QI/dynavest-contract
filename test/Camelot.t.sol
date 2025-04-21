@@ -6,6 +6,7 @@ import {IERC20} from "forge-std/interfaces/IERC20.sol";
 import {console} from "forge-std/console.sol";
 import {IYakRouter, Trade} from "./helpers/IYakRouter.sol";
 import {IXGrailToken} from "./helpers/IXGrailToken.sol";
+import {CamelotStrategy} from "../src/strategies/CamelotStrategy.sol";
 
 contract CamelotTest is TestBase {
     IYakRouter constant yakRouter = IYakRouter(0x99D4e80DB0C023EFF8D25d8155E0dCFb5aDDeC5E); // Example address
@@ -16,6 +17,8 @@ contract CamelotTest is TestBase {
 
     uint256 constant INIT_SUPPLY = 10 * 1e18;
 
+    CamelotStrategy camelotStrategy;
+
     receive() external payable {}
 
     function setUp() public override {
@@ -23,6 +26,7 @@ contract CamelotTest is TestBase {
 
         super.setUp();
         _deployContracts();
+        camelotStrategy = new CamelotStrategy();
 
         deal(user, INIT_SUPPLY);
     }
@@ -88,18 +92,11 @@ contract CamelotTest is TestBase {
         address usage = DividendsV2;
         Trade memory trade = _buildTradeParams(amountIn);
 
-        vm.prank(user);
-        (bool success,) = address(this).call{value: amountIn}("");
-        require(success, "Transfer failed");
-
-        // From this contract
-        yakRouter.swapNoSplitFromETH{value: amountIn}(trade, 0, address(this));
-        uint256 amountConvert = IERC20(GRAIL).balanceOf(address(this));
-        IERC20(GRAIL).approve(xGRAIL, amountConvert);
-        IXGrailToken(xGRAIL).convertTo(amountConvert, user);
-
-        uint256 amountAllocate = IERC20(xGRAIL).balanceOf(user);
         vm.startPrank(user);
+        camelotStrategy.swapETHToXGrail{value: amountIn}(trade, user);
+
+        // From user
+        uint256 amountAllocate = IERC20(xGRAIL).balanceOf(user);
         IXGrailToken(xGRAIL).approveUsage(usage, amountAllocate);
         IXGrailToken(xGRAIL).allocate(usage, amountAllocate, new bytes(0));
         vm.stopPrank();
