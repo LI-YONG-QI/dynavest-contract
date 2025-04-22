@@ -7,6 +7,7 @@ import {console} from "forge-std/console.sol";
 import {IBeefyVaultV6} from "../src/interfaces/IBeefyVaultV6.sol";
 import {IV3SwapRouter} from "./helpers/IV3SwapRouter.sol";
 import {TestBase} from "./helpers/TestBase.sol";
+import {GMXStrategy} from "../src/strategies/GMXStrategy.sol";
 
 // Note: Use the Uniswap config
 contract GMXTest is TestBase {
@@ -15,11 +16,15 @@ contract GMXTest is TestBase {
 
     uint256 constant INIT_SUPPLY = 10 * 1e18;
 
+    GMXStrategy gmxStrategy;
+
     function setUp() public override {
         vm.selectFork(arbitrumFork);
 
         super.setUp();
         _deployContracts();
+
+        gmxStrategy = new GMXStrategy(BEEFY_VAULT);
     }
 
     function test_depositBeefyVaultWithGMX() public {
@@ -61,5 +66,17 @@ contract GMXTest is TestBase {
 
         console.log(IERC20(BEEFY_VAULT).balanceOf(user));
         assertGt(IERC20(BEEFY_VAULT).balanceOf(user), 0);
+    }
+
+    function test_depositWithStrategy() public {
+        uint256 beforeMooGMX = IERC20(BEEFY_VAULT).balanceOf(user);
+        uint256 depositAmount = 1 ether;
+        deal(user, depositAmount + INIT_SUPPLY);
+
+        vm.startPrank(user);
+        gmxStrategy.depositToBeefyVaultWithETH{value: depositAmount}();
+        vm.stopPrank();
+
+        assertGt(IERC20(BEEFY_VAULT).balanceOf(user), beforeMooGMX);
     }
 }
