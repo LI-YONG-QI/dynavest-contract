@@ -42,7 +42,7 @@ abstract contract TestBase is Test {
     uint256 immutable baseFork =
         vm.createFork(string.concat("https://base-mainnet.g.alchemy.com/v2/", ALCHEMY), 28924840);
     uint256 immutable arbitrumFork =
-        vm.createFork(string.concat("https://arb-mainnet.g.alchemy.com/v2/", ALCHEMY), 328683050);
+        vm.createFork(string.concat("https://arb-mainnet.g.alchemy.com/v2/", ALCHEMY), 328919665);
 
     function setUp() public virtual {}
 
